@@ -1,0 +1,28 @@
+[project]
+name = "weather-etl-pipeline"
+version = "0.1.0"
+description = "ETL pipeline for weather data"
+authors = [{ name = "Lucas" }]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas",
+    "requests",
+    "python-dotenv",
+    "openmeteo-requests",
+    "requests-cache",
+    "retry-requests",
+    "protobuf<5.0",
+    "google-cloud-bigquery",
+    "google-api-core",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

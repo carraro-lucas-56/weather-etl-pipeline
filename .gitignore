@@ -1,0 +1,41 @@
+# ==========================
+# PYTHON
+# ==========================
+__pycache__/
+
+# Virtual environments
+.venv/
+
+# Build / packaging artifacts
+*.egg-info/
+
+# ==========================
+# AIRFLOW
+# ==========================
+# Airflow auto-generated DB and config
+airflow/airflow.db
+airflow/airflow.db-shm
+airflow/airflow.db-wal
+airflow/airflow.cfg
+airflow/simple_auth_manager_passwords.json.generated
+
+# Airflow logs
+airflow/logs/
+
+# ==========================
+# DATA FILES
+# ==========================
+# Raw / processed data
+Data/*.csv
+raw/*.csv
+
+# ==========================
+# CREDENTIALS / SECRETS
+# ==========================
+credentials.json
+
+# ==========================
+# OTHERS
+# ==========================
+.chache.sqlite
+table_schema.json
