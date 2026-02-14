@@ -17,7 +17,7 @@ EMAIL = os.getenv('EMAIL')
 @dag(
     schedule="0 23 * * *",
     start_date=pendulum.datetime(2025, 11, 23,23, 0, 0, tz="America/Sao_Paulo"),
-    catchup=True,
+    catchup=False,
     default_args={
         "email": [f'{EMAIL}'],
         "email_on_failure": True,
@@ -36,7 +36,6 @@ def weather_pipeline():
         """
         Fetch raw weather data for all cities and save as csv files.
         """
-
         day = data_interval_start.to_date_string()
 
         # -------- Load cities -----------------------------------------
@@ -53,19 +52,19 @@ def weather_pipeline():
 
         # -------- Paths for raw output --------------------------------
         raw_weather_path   = f"{DATA_ROOT}/raw/weatherAPI_{day}.csv"
-        raw_openmateo_path = f"{DATA_ROOT}/raw/openmateo_{day}.csv"
+        raw_openmeteo_path = f"{DATA_ROOT}/raw/openmeteo_{day}.csv"
 
         # -------- Fetch API data --------------------------------------
         df_weatherAPI = w.fetch_all(w.get_weatherAPI_data, df_cities, day)
-        df_openmateo  = w.fetch_all(w.get_openmateo_data, df_cities, day)
+        df_openmeteo  = w.get_openmeteo_data(day, df_cities)
 
         # -------- Persist raw data ------------------------------------
         df_weatherAPI.to_csv(raw_weather_path, index=False)
-        df_openmateo.to_csv(raw_openmateo_path, index=False)
+        df_openmeteo.to_csv(raw_openmeteo_path, index=False)
 
         return {
             "weather_path": raw_weather_path,
-            "openmateo_path": raw_openmateo_path,
+            "openmeteo_path": raw_openmeteo_path,
             "day": day
         }
 
@@ -74,16 +73,16 @@ def weather_pipeline():
     # ------------------------------------------------------------------
 
     @task(multiple_outputs=True)
-    def transform(weather_path, openmateo_path, day):
+    def transform(weather_path, openmeteo_path, day):
         """
         Merge, clean and prepare data for BigQuery.
         """
 
         # load from csv
         df_weatherAPI = pd.read_csv(weather_path)
-        df_openmateo  = pd.read_csv(openmateo_path)
+        df_openmeteo  = pd.read_csv(openmeteo_path)
 
-        df_merged = w.merge_dfs(df_weatherAPI, df_openmateo)
+        df_merged = w.merge_dfs(df_weatherAPI, df_openmeteo)
 
         merged_path = f"{DATA_ROOT}/Data/{day}.csv"
         schema_path = f"{DATA_ROOT}/table_schema.json"
@@ -113,7 +112,7 @@ def weather_pipeline():
         """
 
         table_id = w.create_partitioned_table(schema_path)
-        w.load_data_to_bigquery(table_id, merged_path)   
+        w.load_data_to_bigquery(table_id, merged_path, schema_path)   
 
     # ------------------------------------------------------------------
     # DAG dependencies
@@ -122,7 +121,7 @@ def weather_pipeline():
     extracted  = extract()
     transformed = transform(
         extracted["weather_path"],
-        extracted["openmateo_path"],
+        extracted["openmeteo_path"],
         extracted["day"]
     )
     load(transformed["merged_path"], transformed["schema_path"])

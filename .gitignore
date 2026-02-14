@@ -28,6 +28,7 @@ airflow/logs/
 # Raw / processed data
 Data/*.csv
 raw/*.csv
+cities.csv
 
 # ==========================
 # CREDENTIALS / SECRETS
@@ -37,5 +38,7 @@ credentials.json
 # ==========================
 # OTHERS
 # ==========================
-.chache.sqlite
+.cache.sqlite
 table_schema.json
+.env
+cities.csv

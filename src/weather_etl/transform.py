@@ -19,23 +19,44 @@ def dict_to_json_file(data_dict : dict, file_path : str, indent=4) -> None:
     except IOError as e:
         logger.error(f"Error writing to file '{file_path}': {e}")
     except TypeError as e:
-        logger.error(f"Error during JSON serialization: {e}")
+        logger.error(f"Error dusring JSON serialization: {e}")
 
-# ajust the json to the format accepted by google bigquery
-def ajust_json_for_bigquery(data : dict) -> None:
-    data = data['fields'][1:]
-    data[0].pop('tz',None)
 
-    # FIX DATE FIELD TO BE DATETIME
+def ajust_json_for_bigquery(schema_dict: dict) -> list[dict]:
+    """
+    Convert pandas JSON schema to BigQuery-compatible schema.
+    """
 
-    for item in data:
-        if item['type'] == "number":
-            item['type'] = "FLOAT"
+    fields = schema_dict["fields"][1:]
+    bq_schema = []
+
+    for field in fields:
+        name = field["name"]
+        pandas_type = field["type"]
+
+        if name == "date":
+            bq_type = "TIMESTAMP"   # REQUIRED for partitioning
+            mode = "REQUIRED"
+        elif pandas_type == "number":
+            bq_type = "FLOAT"
+            mode = "NULLABLE"
+        elif pandas_type == "integer":
+            bq_type = "INTEGER"
+            mode = "NULLABLE"
+        elif pandas_type == "boolean":
+            bq_type = "BOOLEAN"
+            mode = "NULLABLE"
         else:
-            item['type'] = item['type'].upper()
-        
-    return data
+            bq_type = "STRING"
+            mode = "NULLABLE"
 
+        bq_schema.append({
+            "name": name,
+            "type": bq_type,
+            "mode": mode
+        })
+
+    return bq_schema
 
 #
 # TRANSFORMATIONS
@@ -44,11 +65,13 @@ def ajust_json_for_bigquery(data : dict) -> None:
 def merge_dfs(df_weatherAPI : pd.DataFrame ,df_openmateo : pd.DataFrame) -> pd.DataFrame:
 
    # ajusting datetime columns
-    df_weatherAPI['time'] = pd.to_datetime(df_weatherAPI['time'])
-    df_weatherAPI = df_weatherAPI.rename(columns={'time': 'date'})
-    df_weatherAPI['date'] = (df_weatherAPI['date'].dt.tz_localize('America/Sao_Paulo'))
+    df_weatherAPI.rename(columns={'time': 'date'},inplace=True)
 
+    df_weatherAPI['date'] = pd.to_datetime(df_weatherAPI['date'])
     df_openmateo['date'] = pd.to_datetime(df_openmateo['date'])
+    
+    df_weatherAPI['date'] = df_weatherAPI['date'].dt.tz_localize('America/Sao_Paulo')
+    df_openmateo['date'] = df_openmateo['date'].dt.tz_convert('America/Sao_Paulo')
 
     # combining the two dataframes
     df_merged = pd.merge(df_openmateo,df_weatherAPI,how='inner',on=['date','city'])
@@ -67,8 +90,5 @@ def merge_dfs(df_weatherAPI : pd.DataFrame ,df_openmateo : pd.DataFrame) -> pd.D
 
     # drop the old columns
     df_merged = df_merged.drop(columns=[c for pair in column_pairs for c in pair if c in df_merged.columns])
-
-    # removing timezone info
-    df_merged["date"] = pd.to_datetime(df_merged["date"]).dt.strftime("%Y-%m-%d %H:%M:%S")
 
     return df_merged
