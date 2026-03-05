@@ -18,8 +18,6 @@ def get_city_coords():
   url = os.getenv('CITIES_URL') 
   df = pd.read_csv(url)
 
-  # filtering the cities from the state of sao paulo
-  # df = df[df['codigo_uf'] == 31][['nome','latitude','longitude']].rename(columns={'nome':'city'})
   df = df[['nome','latitude','longitude']].rename(columns={'nome':'city'})
   df = df.head(5000)
   
@@ -28,7 +26,7 @@ def get_city_coords():
 def get_openmeteo_data(day : str, df_cities: pd.DataFrame) -> pd.DataFrame:
     """
     Fetch raw data from openmateo api and returns a dataframe contaning only
-    the desired featrues
+    the desired featrues.
     """
 
     CITIES_PER_MINUTE = 500
@@ -52,7 +50,7 @@ def get_openmeteo_data(day : str, df_cities: pd.DataFrame) -> pd.DataFrame:
       # getting the right slice from df_cities
       chunk = df_cities.iloc[i:CHUNK_SIZE+i]
 
-      time.sleep(seconds_per_chunk + 1)
+      time.sleep(seconds_per_chunk+1)
 
       url = "https://api.open-meteo.com/v1/forecast"
       params = {
@@ -69,7 +67,7 @@ def get_openmeteo_data(day : str, df_cities: pd.DataFrame) -> pd.DataFrame:
       except Exception as e:
         logger.error(f"Error fetching chunk {i//CHUNK_SIZE}: {e}")
         # responses = openmeteo.weather_api(url, params=params)
-        # continue
+        continue
 
       for index, response in enumerate(responses):
 
@@ -109,6 +107,7 @@ def get_weatherAPI_data(day : str, location : str, lat : float, lon : float) -> 
     the desired featrues.
     """
 
+    # TIRAR ISSO DA
     API_KEY = os.getenv("WEATHER_API_KEY")
     BASE_URL_HISTORY = "http://api.weatherapi.com/v1/history.json"
     BASE_URL_CURRENT = "http://api.weatherapi.com/v1/current.json"

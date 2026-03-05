@@ -41,4 +41,3 @@ credentials.json
 .cache.sqlite
 table_schema.json
 .env
-cities.csv

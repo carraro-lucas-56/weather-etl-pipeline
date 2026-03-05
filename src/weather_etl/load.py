@@ -4,7 +4,6 @@ from google.cloud import bigquery
 from google.api_core.exceptions import Conflict, GoogleAPIError
 import time
 import logging 
-from datetime import timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -116,5 +115,10 @@ def load_data_to_bigquery(table_id : str ,data_path : str, schema_path : str) ->
         job = client.load_table_from_file(file,
                                           table_id,
                                           job_config=job_config)
+
+        logger.info(f"Started load job {job.job_id}")
+
         job.result()
 
+        logger.info("Job finished")
+        logger.info(f"Errors: {job.errors}")

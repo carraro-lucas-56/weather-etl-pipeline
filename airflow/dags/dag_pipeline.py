@@ -1,10 +1,12 @@
 import os
 import pendulum
-import weather_etl as w
-from airflow.sdk import dag, task
 import pandas as pd
+
+from airflow.sdk import dag, task
 from airflow.exceptions import AirflowFailException
 from dotenv import load_dotenv
+
+import weather_etl as w
 
 load_dotenv()
 DATA_ROOT = os.getenv('DATA_ROOT')
@@ -16,7 +18,7 @@ EMAIL = os.getenv('EMAIL')
 
 @dag(
     schedule="0 23 * * *",
-    start_date=pendulum.datetime(2025, 11, 23,23, 0, 0, tz="America/Sao_Paulo"),
+    start_date=pendulum.today("America/Sao_Paulo"),
     catchup=False,
     default_args={
         "email": [f'{EMAIL}'],
